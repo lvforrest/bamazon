@@ -14,29 +14,35 @@ var connection = mysql.createConnection({
 connection.connect(function(err){
     if (err) throw err;
     console.log("connection successful");
-    createTable();
-});
+    customerInput();
+})
 
-var createTable =function(){
-    connection.query("SELECT * FROM products", function(err,res){
+function createTable(res){
         var table = new Table({
             head: ["ID", "Product Name", "Department", "Price", "Quantity"],
-            colWidths:[10,20,20,10,10]
+            colWidths:[10,45,40,8,10]
         });
         // console.log("ID | Product Name | Department Name | Price  Quanity");
-        for (var i=0; i<res.length; i++){
-            table.push([res[i].item_id + res[i].productName + 
-                res[i].department_name + res[i].price + res[i].stockquanity]);
-        } console.log(table.toString());
-        customerInput(res);
-    })
+        for (var i=0; i <res.length; i++){
+            table.push([res[i].item_id,res[i].productName, 
+                res[i].department_name, res[i].price, res[i].stockquanity]);
+        } 
+        console.log(table.toString());
+    
 }
-var customerInput = function(res){
+
+var customerInput = function(){
+    connection.query("SELECT * FROM products", function(err,res){
+        createTable(res);
+        var choiceArray = [];
+		for (var i = 0; i < res.length; i++) {
+			choiceArray.push(res[i].productName);
+		}
     inquirer.prompt([
         {
             type:"input",
             message:"What is the ID of the item you are purchasing today?",
-            name: "choice",
+            name: "id",
             validate: function(value){
                 if(isNaN(value)== false){
                     return true;
@@ -44,7 +50,6 @@ var customerInput = function(res){
                     return false;
                 }
             }
-
     },
     {
         type: "confirm",
@@ -65,25 +70,20 @@ var customerInput = function(res){
             }
         }
     }
+    
 ]).then(function(answers){
-    var correct =false;
-    for(var i=0; i <res.length; i++){
-        if (res[i].productName ===answer.choice){
-            correct= true;
-            var product = answers.choice;
-            var id = i;
-        // createTable();
-        }
-        if ((res[id].stockquanity- answers.qty)>0){
-            connection.query("UPDATE products SET stockquantity = " + res[id].stockquanity-answer.qty +
-             "WHERE productName =" + product, function(err,res){
-                 console.log(" Purchase complete!");
-                 createTable();
-             })
-        } else {
-            console.log("Not a valid choice");
-            customerInput(res);
-        }
-    }
-});
+    console.log(answers);
+			var itemID = answers.id;
+			console.log(itemID);
+			var userItem = res[itemID-1];
+			console.log(userItem);
+			var newQuantity = userItem.stockquanity - answers.qty;
+			if (newQuantity >= 0) {
+				connection.query("UPDATE products SET ? WHERE item_id = ?", [{ stockquanity: newQuantity }, itemID]);
+				customerInput();
+			} else {
+                console.log("There are not enough in stock for you to purchase.");     
+			}
+		})
+	})
 }
