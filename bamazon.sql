@@ -25,4 +25,4 @@ VALUES ("basketball","sporting goods", 20.00, 50),
 ("clipboard", "school supplies", 8.50, 25),
 ("nike vapor max", "shoes", 100.00, 20)
 
-SELECT * FROM bamazon_DB.products;
+SELECT * FROM products;
